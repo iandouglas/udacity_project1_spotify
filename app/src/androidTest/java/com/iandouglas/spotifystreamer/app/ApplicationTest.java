@@ -1,4 +1,4 @@
-package app.spotify.nanodegree.iandouglas.com.spotifystreamer;
+package com.iandouglas.spotifystreamer.app;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
