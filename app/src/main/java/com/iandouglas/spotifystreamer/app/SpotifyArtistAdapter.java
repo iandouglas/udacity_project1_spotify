@@ -23,8 +23,8 @@ public class SpotifyArtistAdapter extends ArrayAdapter<SpotifyArtist> {
         SpotifyArtist artist = getItem(position);
         View rootView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artists, parent, false);
 
-//        ImageView imgView = (ImageView) rootView.findViewById(R.id.list_item_artist_image);
-//        Picasso.with(getContext()).load(artist.imgUrl).resize(50, 50).into(imgView);
+        ImageView imgView = (ImageView) rootView.findViewById(R.id.list_item_artist_image);
+        Picasso.with(getContext()).load(artist.imgUrl).resize(50, 50).into(imgView);
 
         TextView artistNameView = (TextView) rootView.findViewById(R.id.list_item_artists_name);
         artistNameView.setText(artist.artistName);

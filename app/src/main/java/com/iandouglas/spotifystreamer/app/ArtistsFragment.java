@@ -1,5 +1,6 @@
 package com.iandouglas.spotifystreamer.app;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -12,6 +13,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -28,9 +30,11 @@ import kaaes.spotify.webapi.android.models.ArtistsPager;
 public class ArtistsFragment extends Fragment {
     private Toast toast;
     private SpotifyArtistAdapter mArtistsAdapter;
-
+    private ArrayList<SpotifyArtist> mArtists;
+    FetchArtistsTask artistTask = new FetchArtistsTask();
 
     public ArtistsFragment() {
+        artistTask = new FetchArtistsTask();
     }
 
     @Override
@@ -38,6 +42,7 @@ public class ArtistsFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         toast = new Toast(getActivity().getApplicationContext());
+        mArtists = new ArrayList<>();
     }
 
     @Override
@@ -56,8 +61,7 @@ public class ArtistsFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        SpotifyArtist[] artistList = {};
-        mArtistsAdapter = new SpotifyArtistAdapter(getActivity(), Arrays.asList(artistList));
+        mArtistsAdapter = new SpotifyArtistAdapter(getActivity(), mArtists);
 
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
@@ -67,13 +71,30 @@ public class ArtistsFragment extends Fragment {
         final EditText artistSearch = (EditText)rootView.findViewById(R.id.edittext_artist_search);
         artistSearch.addTextChangedListener(new TextWatcher(){
             public void afterTextChanged(Editable s) {
+                if (artistSearch.length() == 0) {
+                    mArtistsAdapter.clear();
+                }
                 if (artistSearch.length() >= 2) {
-                    FetchArtistsTask artistTask = new FetchArtistsTask();
+                    if (artistTask.getStatus() != AsyncTask.Status.FINISHED) {
+                        Log.d("ArtistsFragment", "onCreateView, canceling old search");
+                        artistTask.cancel(true);
+                    }
                     artistTask.execute(artistSearch.getText().toString());
                 }
             }
             public void beforeTextChanged(CharSequence s, int start, int count, int after){}
             public void onTextChanged(CharSequence s, int start, int before, int count){}
+        });
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                SpotifyArtist artist = mArtistsAdapter.getItem(position);
+
+                Intent intent = new Intent(getActivity(), DetailActivity.class)
+                        .putExtra(Intent.EXTRA_TEXT, artist);
+                startActivity(intent);
+            }
         });
 
         return rootView;
@@ -107,16 +128,11 @@ public class ArtistsFragment extends Fragment {
             return parseSpotifyArtistResults(results);
         }
 
-//        @Override
+        @Override
         protected void onPostExecute(List<SpotifyArtist> result) {
             if (result != null) {
                 mArtistsAdapter.clear();
                 mArtistsAdapter.addAll(result);
-//                for(SpotifyArtist artist : result) {
-//                    Log.d(LOG_TAG, artist.artistName);
-//                    Log.d(LOG_TAG, artist.imgUrl);
-//                    mArtistsAdapter.add(artist);
-//                }
             }
         }
 
@@ -124,9 +140,6 @@ public class ArtistsFragment extends Fragment {
             List<SpotifyArtist> data = new ArrayList<SpotifyArtist>();
 
             for(Artist artist : results.artists.items) {
-
-//            for (int i = 0; i < results.artists.items.size(); i++) {
-//                Artist artist = results.artists.items.get(i);
                 String artistName = artist.name;
                 String imgUrl = "http://fc01.deviantart.net/fs71/f/2014/279/4/5/doge__by_honeybunny135-d81wk54.png";
                 if (artist.images.size() > 0) {
