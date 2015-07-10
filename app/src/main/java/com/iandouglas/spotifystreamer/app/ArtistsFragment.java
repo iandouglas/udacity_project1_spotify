@@ -19,13 +19,13 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
+
 
 public class ArtistsFragment extends Fragment {
     private Toast toast;
@@ -90,18 +90,18 @@ public class ArtistsFragment extends Fragment {
             public void onTextChanged(CharSequence s, int start, int before, int count){}
         });
 
-//        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-//                SpotifyArtist artist = mArtistsAdapter.getItem(position);
-//
-//                Intent intent = new Intent(getActivity(), Top10Activity.class);
-//                intent.putExtra("artistName", artist.name);
-//                intent.putExtra("artistId", artist.id);
-////                retainedFragment.setTopTenList(null);
-//                startActivity(intent);
-//            }
-//        });
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                SpotifyArtist artist = mArtistsAdapter.getItem(position);
+
+                Intent intent = new Intent(getActivity(), TracksActivity.class);
+                intent.putExtra(getString(R.string.artist_name), artist.name);
+                intent.putExtra(getString(R.string.artist_id), artist.id);
+
+                startActivity(intent);
+            }
+        });
 
         return rootView;
     }
@@ -126,9 +126,9 @@ public class ArtistsFragment extends Fragment {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        toast.cancel();
-                        toast = Toast.makeText(getActivity().getApplicationContext(), "no results found", Toast.LENGTH_LONG);
-                        toast.show();
+                    toast.cancel();
+                    toast = Toast.makeText(getActivity().getApplicationContext(), getString(R.string.no_artists_found), Toast.LENGTH_LONG);
+                    toast.show();
                     }
                 });
 

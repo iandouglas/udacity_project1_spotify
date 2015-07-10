@@ -11,9 +11,10 @@
     >
 
     <ImageView
-        android:id="@+id/list_item_artist_image"
+        android:id="@+id/list_item_track_image"
         android:layout_width="50dp"
         android:layout_height="50dp"
+        android:src="@drawable/artist_placeholder"
         />
 
     <LinearLayout
@@ -27,8 +28,15 @@
         <TextView xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ian was here"
-            android:id="@+id/list_item_artists_name"
+            android:text="track title"
+            android:id="@+id/list_item_track_name"
+            />
+
+        <TextView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="album title"
+            android:id="@+id/list_item_album_name"
             />
 
     </LinearLayout>
