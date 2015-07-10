@@ -1,11 +1,19 @@
 package com.iandouglas.spotifystreamer.app;
 
+import kaaes.spotify.webapi.android.models.Artist;
+
 public class SpotifyArtist {
-    String artistName;
+    String id;
+    String name;
     String imgUrl;
 
-    public SpotifyArtist(String artistName, String imgUrl) {
-        this.artistName = artistName;
-        this.imgUrl = imgUrl;
+    public SpotifyArtist(Artist artist) {
+        this.id = artist.id;
+        this.name = artist.name;
+        this.imgUrl = "";
+
+        if (artist.images.size() > 0) {
+            this.imgUrl = artist.images.get(0).url;
+        }
     }
 }

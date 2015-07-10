@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
+import com.squareup.picasso.RequestCreator;
 
 import java.util.List;
 
@@ -20,14 +21,20 @@ public class SpotifyArtistAdapter extends ArrayAdapter<SpotifyArtist> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+        RequestCreator p;
+
         SpotifyArtist artist = getItem(position);
         View rootView = LayoutInflater.from(getContext()).inflate(R.layout.list_item_artists, parent, false);
 
         ImageView imgView = (ImageView) rootView.findViewById(R.id.list_item_artist_image);
-        Picasso.with(getContext()).load(artist.imgUrl).resize(50, 50).into(imgView);
+        p = Picasso.with(getContext()).load(R.drawable.no_image);
+        if (artist.imgUrl != "") {
+            p = Picasso.with(getContext()).load(artist.imgUrl);
+        }
+        p.resize(50, 50).into(imgView);
 
         TextView artistNameView = (TextView) rootView.findViewById(R.id.list_item_artists_name);
-        artistNameView.setText(artist.artistName);
+        artistNameView.setText(artist.name);
 
         return rootView;
     }

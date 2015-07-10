@@ -71,14 +71,18 @@ public class ArtistsFragment extends Fragment {
         final EditText artistSearch = (EditText)rootView.findViewById(R.id.edittext_artist_search);
         artistSearch.addTextChangedListener(new TextWatcher(){
             public void afterTextChanged(Editable s) {
+                if (artistTask.getStatus() != AsyncTask.Status.FINISHED) {
+                    Log.d("ArtistsFragment", "onCreateView, canceling old search");
+                    artistTask.cancel(true);
+                }
+
                 if (artistSearch.length() == 0) {
                     mArtistsAdapter.clear();
                 }
+
                 if (artistSearch.length() >= 2) {
-                    if (artistTask.getStatus() != AsyncTask.Status.FINISHED) {
-                        Log.d("ArtistsFragment", "onCreateView, canceling old search");
-                        artistTask.cancel(true);
-                    }
+                    artistTask.cancel(true);
+                    artistTask = new FetchArtistsTask();
                     artistTask.execute(artistSearch.getText().toString());
                 }
             }
@@ -86,19 +90,22 @@ public class ArtistsFragment extends Fragment {
             public void onTextChanged(CharSequence s, int start, int before, int count){}
         });
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-                SpotifyArtist artist = mArtistsAdapter.getItem(position);
-
-                Intent intent = new Intent(getActivity(), DetailActivity.class)
-                        .putExtra(Intent.EXTRA_TEXT, artist);
-                startActivity(intent);
-            }
-        });
+//        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//            @Override
+//            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+//                SpotifyArtist artist = mArtistsAdapter.getItem(position);
+//
+//                Intent intent = new Intent(getActivity(), Top10Activity.class);
+//                intent.putExtra("artistName", artist.name);
+//                intent.putExtra("artistId", artist.id);
+////                retainedFragment.setTopTenList(null);
+//                startActivity(intent);
+//            }
+//        });
 
         return rootView;
     }
+
 
     public class FetchArtistsTask extends AsyncTask<String, Void, List<SpotifyArtist>> {
 
@@ -140,12 +147,7 @@ public class ArtistsFragment extends Fragment {
             List<SpotifyArtist> data = new ArrayList<SpotifyArtist>();
 
             for(Artist artist : results.artists.items) {
-                String artistName = artist.name;
-                String imgUrl = "http://fc01.deviantart.net/fs71/f/2014/279/4/5/doge__by_honeybunny135-d81wk54.png";
-                if (artist.images.size() > 0) {
-                    imgUrl = artist.images.get(0).url;
-                }
-                data.add(new SpotifyArtist(artistName, imgUrl));
+                data.add(new SpotifyArtist(artist));
             }
 
             return data;
