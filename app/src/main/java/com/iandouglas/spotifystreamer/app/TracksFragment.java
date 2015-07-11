@@ -135,6 +135,7 @@ public class TracksFragment extends Fragment {
 
         @Override
         protected List<SpotifyTrack> doInBackground(String... params) {
+            Tracks tracks = null;
 
             if (params.length == 0) {
                 return null;
@@ -144,23 +145,29 @@ public class TracksFragment extends Fragment {
             Map<String, Object> queryMap = new HashMap<>();
             queryMap.put("country", "US");
 
-            Tracks tracks = spotify.getArtistTopTrack(artistId, queryMap);
-            if (tracks == null || tracks.tracks.size() == 0) {
-                showToast(getString(R.string.no_tracks));
+            try {
+                tracks = spotify.getArtistTopTrack(artistId, queryMap);
+            } catch (RetrofitError ex) {
+                Toast.makeText(getActivity(), getResources().getString(R.string.connection_error), Toast.LENGTH_SHORT).show();
             }
 
             return parseSpotifyTrackResults(tracks);
-
         }
 
         @Override
         protected void onPostExecute(List<SpotifyTrack> results) {
+            if (results == null || results.size() == 0) {
+                showToast(getString(R.string.no_tracks));
+                return;
+            }
+
             loadTrackList(results);
         }
 
         public void loadTrackList(List<SpotifyTrack> results) {
+            mTracksAdapter.clear();
+
             if (results != null) {
-                mTracksAdapter.clear();
                 mTracksAdapter.addAll(results);
             }
         }

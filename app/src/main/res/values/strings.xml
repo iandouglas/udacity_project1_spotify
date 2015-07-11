@@ -9,6 +9,7 @@
     <string name="search_failed">Search failed</string>
     <string name="top_tracks">Top Tracks by</string>
     <string name="no_tracks">This artist has no top tracks on Spotify. Please try again.</string>
+    <string name="connection_error">Cannot connect to Spotify. Please try again.</string>
 
     <!-- intent parameters -->
     <string name="artist_name" translatable="false">artistName</string>

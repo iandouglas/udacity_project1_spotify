@@ -25,6 +25,7 @@ import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
 import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.ArtistsPager;
+import retrofit.RetrofitError;
 
 
 public class ArtistsFragment extends Fragment {
@@ -134,6 +135,7 @@ public class ArtistsFragment extends Fragment {
 
         @Override
         protected List<SpotifyArtist> doInBackground(String... params) {
+            ArtistsPager results = null;
 
             if (params.length == 0) {
                 return null;
@@ -141,7 +143,11 @@ public class ArtistsFragment extends Fragment {
 
             SpotifyApi api = new SpotifyApi();
             SpotifyService spotify = api.getService();
-            ArtistsPager results = spotify.searchArtists(params[0]);
+            try {
+                results = spotify.searchArtists(params[0]);
+            } catch(RetrofitError ex){
+                Toast.makeText(getActivity(), getResources().getString(R.string.connection_error), Toast.LENGTH_SHORT).show();
+            }
 
             if (results == null || results.artists.items.size() == 0)
                 getActivity().runOnUiThread(new Runnable() {
@@ -158,8 +164,9 @@ public class ArtistsFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<SpotifyArtist> result) {
+            mArtistsAdapter.clear();
+
             if (result != null) {
-                mArtistsAdapter.clear();
                 mArtistsAdapter.addAll(result);
             }
         }
