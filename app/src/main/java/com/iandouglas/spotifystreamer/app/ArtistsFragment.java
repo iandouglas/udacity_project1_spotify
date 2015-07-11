@@ -42,7 +42,12 @@ public class ArtistsFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
         toast = new Toast(getActivity().getApplicationContext());
-        mArtists = new ArrayList<>();
+
+        if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.cached_artists))) {
+            mArtists = new ArrayList<>();
+        } else {
+            mArtists = savedInstanceState.getParcelableArrayList(getString(R.string.cached_artists));
+        }
     }
 
     @Override
@@ -57,6 +62,11 @@ public class ArtistsFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelableArrayList(getString(R.string.cached_artists), mArtists);
+        super.onSaveInstanceState(outState);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -71,6 +81,10 @@ public class ArtistsFragment extends Fragment {
         final EditText artistSearch = (EditText)rootView.findViewById(R.id.edittext_artist_search);
         artistSearch.addTextChangedListener(new TextWatcher(){
             public void afterTextChanged(Editable s) {
+                if (s.equals(artistSearch.getText())) {
+                    return;
+                }
+                
                 if (artistTask.getStatus() != AsyncTask.Status.FINISHED) {
                     Log.d("ArtistsFragment", "onCreateView, canceling old search");
                     artistTask.cancel(true);
@@ -102,6 +116,13 @@ public class ArtistsFragment extends Fragment {
                 startActivity(intent);
             }
         });
+
+        if (savedInstanceState != null) {
+            List<SpotifyArtist> result = savedInstanceState.getParcelableArrayList(getString(R.string.cached_artists));
+            if (result != null) {
+                mArtistsAdapter.addAll(result);
+            }
+        }
 
         return rootView;
     }

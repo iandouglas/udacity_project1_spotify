@@ -13,4 +13,10 @@
     <!-- intent parameters -->
     <string name="artist_name" translatable="false">artistName</string>
     <string name="artist_id" translatable="false">artistId</string>
+
+    <!-- savedInstanceState parameters -->
+    <string name="cached_artists" translatable="false">cached_artist_list</string>
+    <string name="cached_tracks" translatable="false">cached_track_list</string>
+    <string name="cached_artist_name" translatable="false">cached_artist_name</string>
+    <string name="cached_artist" translatable="false">cached_artist</string>
 </resources>

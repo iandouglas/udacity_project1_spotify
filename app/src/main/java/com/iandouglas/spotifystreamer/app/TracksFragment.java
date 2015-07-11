@@ -26,6 +26,7 @@ import java.util.Map;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
+import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
 import kaaes.spotify.webapi.android.models.TracksPager;
@@ -53,13 +54,16 @@ public class TracksFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setHasOptionsMenu(true);
         toast = new Toast(getActivity().getApplicationContext());
-        mTracks = new ArrayList<>();
 
-        TracksActivity trackActivity = (TracksActivity) getActivity();
-        artistId = trackActivity.getArtistId();
-        artistName = trackActivity.getArtistName();
+        if (savedInstanceState == null || !savedInstanceState.containsKey(getString(R.string.cached_tracks))) {
+            mTracks = new ArrayList<>();
+            TracksActivity trackActivity = (TracksActivity) getActivity();
+            artistId = trackActivity.getArtistId();
+            artistName = trackActivity.getArtistName();
+        }
     }
 
     @Override
@@ -74,9 +78,26 @@ public class TracksFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        SpotifyArtist artist = new SpotifyArtist(artistId, artistName, "");
+        outState.putParcelable(getString(R.string.cached_artist), artist);
+
+        outState.putParcelableArrayList(getString(R.string.cached_tracks), mTracks);
+        super.onSaveInstanceState(outState);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+        if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string.cached_tracks))) {
+            mTracks = savedInstanceState.getParcelableArrayList(getString(R.string.cached_tracks));
+
+            final SpotifyArtist artist = savedInstanceState.getParcelable(getString(R.string.cached_artist));
+            artistId = artist.id;
+            artistName = artist.name;
+        }
+
         mTracksAdapter = new SpotifyTrackAdapter(getActivity(), mTracks);
 
         View rootView = inflater.inflate(R.layout.fragment_tracks, container, false);
@@ -87,30 +108,22 @@ public class TracksFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.artist_track_list);
         listView.setAdapter(mTracksAdapter);
 
-        if (trackTask.getStatus() != AsyncTask.Status.FINISHED) {
-            Log.d("TracksFragment", "onCreateView, canceling old search");
-            trackTask.cancel(true);
+        if (savedInstanceState == null) {
+            if (trackTask.getStatus() != AsyncTask.Status.FINISHED) {
+                Log.d("TracksFragment", "onCreateView, canceling old search");
+                trackTask.cancel(true);
+            }
+
+            mTracksAdapter.clear();
+
+            trackTask = new FetchTracksTask();
+            trackTask.execute(this.artistId);
         }
 
-        mTracksAdapter.clear();
-
-        trackTask = new FetchTracksTask();
-        // param should be the artist id
-
-        trackTask.execute(this.artistId);
-
-//        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//            @Override
-//            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
-//                SpotifyTrack track = mTracksAdapter.getItem(position);
-//
-//                Intent intent = new Intent(getActivity(), TracksFragment.class);
-//                intent.putExtra(getString(R.string.track_name), track.name);
-//                intent.putExtra(getString(R.string.track_id), track.id);
-//
-//                startActivity(intent);
-//            }
-//        });
+        if (mTracks != null) {
+//            mTracksAdapter.clear();
+            mTracksAdapter.addAll(mTracks);
+        }
 
         return rootView;
     }
@@ -141,10 +154,14 @@ public class TracksFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(List<SpotifyTrack> result) {
-            if (result != null) {
+        protected void onPostExecute(List<SpotifyTrack> results) {
+            loadTrackList(results);
+        }
+
+        public void loadTrackList(List<SpotifyTrack> results) {
+            if (results != null) {
                 mTracksAdapter.clear();
-                mTracksAdapter.addAll(result);
+                mTracksAdapter.addAll(results);
             }
         }
 
