@@ -84,7 +84,7 @@ public class ArtistsFragment extends Fragment {
                 if (s.equals(artistSearch.getText())) {
                     return;
                 }
-                
+
                 if (artistTask.getStatus() != AsyncTask.Status.FINISHED) {
                     Log.d("ArtistsFragment", "onCreateView, canceling old search");
                     artistTask.cancel(true);
