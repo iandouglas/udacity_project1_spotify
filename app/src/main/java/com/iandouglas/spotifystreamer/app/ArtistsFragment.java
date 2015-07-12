@@ -86,17 +86,14 @@ public class ArtistsFragment extends Fragment {
                     return;
                 }
 
-                if (artistTask.getStatus() != AsyncTask.Status.FINISHED) {
-                    Log.d("ArtistsFragment", "onCreateView, canceling old search");
-                    artistTask.cancel(true);
-                }
+                // if the user is still typing, cancel any old search going on
+                artistTask.cancel(true);
 
                 if (artistSearch.length() == 0) {
                     mArtistsAdapter.clear();
                 }
 
                 if (artistSearch.length() >= 2) {
-                    artistTask.cancel(true);
                     artistTask = new FetchArtistsTask();
                     artistTask.execute(artistSearch.getText().toString());
                 }
@@ -145,40 +142,56 @@ public class ArtistsFragment extends Fragment {
             SpotifyService spotify = api.getService();
             try {
                 results = spotify.searchArtists(params[0]);
-            } catch(RetrofitError ex){
-                Toast.makeText(getActivity(), getResources().getString(R.string.connection_error), Toast.LENGTH_SHORT).show();
-            }
-
-            if (results == null || results.artists.items.size() == 0)
+            } catch (RetrofitError ex) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                    toast.cancel();
-                    toast = Toast.makeText(getActivity().getApplicationContext(), getString(R.string.no_artists_found), Toast.LENGTH_LONG);
-                    toast.show();
+                        toast.cancel();
+                        toast = Toast.makeText(
+                                getActivity().getApplicationContext(),
+                                getString(R.string.connection_error),
+                                Toast.LENGTH_SHORT);
+                        toast.show();
                     }
                 });
+            }
 
             return parseSpotifyArtistResults(results);
         }
 
         @Override
-        protected void onPostExecute(List<SpotifyArtist> result) {
+        protected void onPostExecute(List<SpotifyArtist> results) {
             mArtistsAdapter.clear();
 
-            if (result != null) {
-                mArtistsAdapter.addAll(result);
+            if (results == null || results.size() == 0) {
+                showToast(getString(R.string.no_artists_found));
+                return;
             }
+
+            mArtistsAdapter.addAll(results);
         }
 
         public List<SpotifyArtist> parseSpotifyArtistResults(ArtistsPager results) {
             List<SpotifyArtist> data = new ArrayList<SpotifyArtist>();
+
+            if (results == null || results.artists.items.size() == 0) {
+                return data;
+            }
 
             for(Artist artist : results.artists.items) {
                 data.add(new SpotifyArtist(artist));
             }
 
             return data;
+        }
+
+        public void showToast(String message) {
+            toast.cancel();
+            toast = Toast.makeText(
+                    getActivity().getApplicationContext(),
+                    message,
+                    Toast.LENGTH_SHORT);
+            toast.show();
         }
     }
 }

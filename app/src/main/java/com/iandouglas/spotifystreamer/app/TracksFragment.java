@@ -148,7 +148,19 @@ public class TracksFragment extends Fragment {
             try {
                 tracks = spotify.getArtistTopTrack(artistId, queryMap);
             } catch (RetrofitError ex) {
-                Toast.makeText(getActivity(), getResources().getString(R.string.connection_error), Toast.LENGTH_SHORT).show();
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        toast.cancel();
+                        toast = Toast.makeText(
+                                getActivity().getApplicationContext(),
+                                getResources().getString(R.string.connection_error),
+                                Toast.LENGTH_SHORT);
+                        toast.show();
+                    }
+                });
+
+                return null;
             }
 
             return parseSpotifyTrackResults(tracks);
@@ -156,24 +168,22 @@ public class TracksFragment extends Fragment {
 
         @Override
         protected void onPostExecute(List<SpotifyTrack> results) {
+            mTracksAdapter.clear();
+
             if (results == null || results.size() == 0) {
                 showToast(getString(R.string.no_tracks));
                 return;
             }
 
-            loadTrackList(results);
-        }
-
-        public void loadTrackList(List<SpotifyTrack> results) {
-            mTracksAdapter.clear();
-
-            if (results != null) {
-                mTracksAdapter.addAll(results);
-            }
+            mTracksAdapter.addAll(results);
         }
 
         public List<SpotifyTrack> parseSpotifyTrackResults(Tracks results) {
             List<SpotifyTrack> data = new ArrayList<SpotifyTrack>();
+
+            if (results == null || results.tracks.size() == 0) {
+                return data;
+            }
 
             for(Track track : results.tracks) {
                 data.add(new SpotifyTrack(track));
@@ -184,7 +194,10 @@ public class TracksFragment extends Fragment {
 
         public void showToast(String message) {
             toast.cancel();
-            toast = Toast.makeText(getActivity().getApplicationContext(), message, Toast.LENGTH_LONG);
+            toast = Toast.makeText(
+                    getActivity().getApplicationContext(),
+                    message,
+                    Toast.LENGTH_SHORT);
             toast.show();
         }
     }
