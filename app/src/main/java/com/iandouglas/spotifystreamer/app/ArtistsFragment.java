@@ -4,9 +4,6 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -14,8 +11,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -29,9 +26,15 @@ import retrofit.RetrofitError;
 
 
 public class ArtistsFragment extends Fragment {
+    public final static String LOG_TAG = "ArtistsFragment";
+    public String toastString;
+
     private Toast toast;
     private SpotifyArtistAdapter mArtistsAdapter;
     private ArrayList<SpotifyArtist> mArtists;
+    private SearchView mSearchView;
+    private String mArtistSearch;
+
     FetchArtistsTask artistTask = new FetchArtistsTask();
 
     public ArtistsFragment() {
@@ -79,27 +82,23 @@ public class ArtistsFragment extends Fragment {
         ListView listView = (ListView) rootView.findViewById(R.id.listview_artists);
         listView.setAdapter(mArtistsAdapter);
 
-        final EditText artistSearch = (EditText)rootView.findViewById(R.id.edittext_artist_search);
-        artistSearch.addTextChangedListener(new TextWatcher(){
-            public void afterTextChanged(Editable s) {
-                if (s.equals(artistSearch.getText())) {
-                    return;
-                }
+        mSearchView = (SearchView) rootView.findViewById(R.id.artist_search);
 
-                // if the user is still typing, cancel any old search going on
-                artistTask.cancel(true);
-
-                if (artistSearch.length() == 0) {
-                    mArtistsAdapter.clear();
-                }
-
-                if (artistSearch.length() >= 2) {
+        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener(){
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                mArtistSearch = s;
+                if (mArtistSearch != null) {
                     artistTask = new FetchArtistsTask();
-                    artistTask.execute(artistSearch.getText().toString());
+                    artistTask.execute(mArtistSearch);
                 }
+                return false;
             }
-            public void beforeTextChanged(CharSequence s, int start, int count, int after){}
-            public void onTextChanged(CharSequence s, int start, int before, int count){}
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                return false;
+            }
         });
 
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -114,13 +113,6 @@ public class ArtistsFragment extends Fragment {
                 startActivity(intent);
             }
         });
-
-        if (savedInstanceState != null) {
-            List<SpotifyArtist> result = savedInstanceState.getParcelableArrayList(getString(R.string.cached_artists));
-            if (result != null) {
-                mArtistsAdapter.addAll(result);
-            }
-        }
 
         return rootView;
     }
@@ -143,17 +135,8 @@ public class ArtistsFragment extends Fragment {
             try {
                 results = spotify.searchArtists(params[0]);
             } catch (RetrofitError ex) {
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        toast.cancel();
-                        toast = Toast.makeText(
-                                getActivity().getApplicationContext(),
-                                getString(R.string.connection_error),
-                                Toast.LENGTH_SHORT);
-                        toast.show();
-                    }
-                });
+                toastString = getString(R.string.connection_error);
+                return null;
             }
 
             return parseSpotifyArtistResults(results);
@@ -162,6 +145,12 @@ public class ArtistsFragment extends Fragment {
         @Override
         protected void onPostExecute(List<SpotifyArtist> results) {
             mArtistsAdapter.clear();
+
+            if (toastString != null && toastString != "") {
+                showToast(toastString);
+                toastString = "";
+                return;
+            }
 
             if (results == null || results.size() == 0) {
                 showToast(getString(R.string.no_artists_found));

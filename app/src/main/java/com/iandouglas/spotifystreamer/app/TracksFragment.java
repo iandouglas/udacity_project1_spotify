@@ -1,11 +1,8 @@
 package com.iandouglas.spotifystreamer.app;
 
 import android.app.Fragment;
-import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -13,8 +10,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,26 +21,22 @@ import java.util.Map;
 
 import kaaes.spotify.webapi.android.SpotifyApi;
 import kaaes.spotify.webapi.android.SpotifyService;
-import kaaes.spotify.webapi.android.models.Artist;
 import kaaes.spotify.webapi.android.models.Track;
 import kaaes.spotify.webapi.android.models.Tracks;
-import kaaes.spotify.webapi.android.models.TracksPager;
-import retrofit.Callback;
 import retrofit.RetrofitError;
-import retrofit.client.Response;
 
 
 public class TracksFragment extends Fragment {
-
     public final static String LOG_TAG = "TracksFragment";
+    public String toastString;
+    public String artistId;
+    public String artistName;
 
     private Toast toast;
     private SpotifyTrackAdapter mTracksAdapter;
-    private ArrayList<SpotifyTrack> mTracks;
-    FetchTracksTask trackTask = new FetchTracksTask();
 
-    public String artistId;
-    public String artistName;
+    ArrayList<SpotifyTrack> mTracks;
+    FetchTracksTask trackTask = new FetchTracksTask();
 
     public TracksFragment() {
         trackTask = new FetchTracksTask();
@@ -54,7 +45,6 @@ public class TracksFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setHasOptionsMenu(true);
         toast = new Toast(getActivity().getApplicationContext());
 
@@ -63,6 +53,15 @@ public class TracksFragment extends Fragment {
             TracksActivity trackActivity = (TracksActivity) getActivity();
             artistId = trackActivity.getArtistId();
             artistName = trackActivity.getArtistName();
+        }
+        if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string.cached_tracks))) {
+            mTracks = savedInstanceState.getParcelableArrayList(getString(R.string.cached_tracks));
+            SpotifyArtist artist = savedInstanceState.getParcelable(getString(R.string.cached_artist));
+
+            if (artist != null) {
+                artistId = artist.id;
+                artistName = artist.name;
+            }
         }
     }
 
@@ -90,14 +89,6 @@ public class TracksFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        if (savedInstanceState != null && savedInstanceState.containsKey(getString(R.string.cached_tracks))) {
-            mTracks = savedInstanceState.getParcelableArrayList(getString(R.string.cached_tracks));
-
-            final SpotifyArtist artist = savedInstanceState.getParcelable(getString(R.string.cached_artist));
-            artistId = artist.id;
-            artistName = artist.name;
-        }
-
         mTracksAdapter = new SpotifyTrackAdapter(getActivity(), mTracks);
 
         View rootView = inflater.inflate(R.layout.fragment_tracks, container, false);
@@ -118,10 +109,11 @@ public class TracksFragment extends Fragment {
 
             trackTask = new FetchTracksTask();
             trackTask.execute(this.artistId);
+        } else {
+            return rootView;
         }
 
         if (mTracks != null) {
-//            mTracksAdapter.clear();
             mTracksAdapter.addAll(mTracks);
         }
 
@@ -148,18 +140,7 @@ public class TracksFragment extends Fragment {
             try {
                 tracks = spotify.getArtistTopTrack(artistId, queryMap);
             } catch (RetrofitError ex) {
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        toast.cancel();
-                        toast = Toast.makeText(
-                                getActivity().getApplicationContext(),
-                                getResources().getString(R.string.connection_error),
-                                Toast.LENGTH_SHORT);
-                        toast.show();
-                    }
-                });
-
+                toastString = getString(R.string.connection_error);
                 return null;
             }
 
@@ -169,6 +150,12 @@ public class TracksFragment extends Fragment {
         @Override
         protected void onPostExecute(List<SpotifyTrack> results) {
             mTracksAdapter.clear();
+
+            if (toastString != null && toastString != "") {
+                showToast(toastString);
+                toastString = "";
+                return;
+            }
 
             if (results == null || results.size() == 0) {
                 showToast(getString(R.string.no_tracks));
